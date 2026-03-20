@@ -126,11 +126,9 @@ RTPP(
 	PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
 	// Regression conditioning (site tags)
+	// ActivePowerMW must be the PV generation meter in MW.
 	ActivePowerMW         := SITE_HS1_KW_3PH.instMag * 0.001,
 	PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag,
-
-	// meter HV side power 
-	PV_HV_MW              := SITE_PPC_PV_P_HV.instMag,
 
 	// Regression timer
 	RegressionIntervalS   := T#60S

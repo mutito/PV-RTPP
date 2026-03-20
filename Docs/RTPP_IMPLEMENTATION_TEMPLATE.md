@@ -7,16 +7,16 @@ Use this checklist and template to deploy the RTPP library to a new site.
 Import these modules into the RTAC project:
 
 - RTPP_GLOBALS.xml
-- sensor.xml
-- SensorAverage.xml
-- rtppCalc.xml
+- UDT_SENSOR.xml
+- FB_SENSOR_AVG.xml
+- FB_RTPP_CALC.xml
 - RTPP_REG.xml
-- rtppMain.xml
+- FB_RTPP.xml
 - RTPP_PROGRAM.xml
 
 ## 2. One-Time Library Rules
 
-- Do not edit rtppMain.xml, rtppCalc.xml, RTPP_REG.xml for site tag naming.
+- Do not edit FB_RTPP.xml, FB_RTPP_CALC.xml, RTPP_REG.xml for site tag naming.
 - Keep all site-specific mappings in RTPP_PROGRAM.xml only.
 - Keep retained regression coefficients in RTPP_GLOBALS.xml:
   - RTPP_Reg_M := 1.0
@@ -41,9 +41,8 @@ Update these tag mappings in RTPP_PROGRAM.xml:
 - [ ] Rear POA Quality and Value tags
 - [ ] BOM temperature Quality and Value tags
 - [ ] AvailableInverters tag
-- [ ] ActivePowerMW tag (in MW)
+- [ ] ActivePowerMW tag (PV generation meter, in MW)
 - [ ] PSetpointMW tag
-- [ ] PV_HV_MW tag
 
 ## 4. Deployment Template (Site Wrapper)
 
@@ -52,10 +51,10 @@ Copy and adapt this structure in RTPP_PROGRAM.xml.
 ```st
 PROGRAM RTPP_PROGRAM
 VAR
-    RTPP : rtppMain;
-    FrontPOA : ARRAY[1..30] OF sensor;
-    RearPOA  : ARRAY[1..30] OF sensor;
-    BOMTemp  : ARRAY[1..30] OF sensor;
+  RTPP : FB_RTPP;
+  FrontPOA : ARRAY[1..30] OF UDT_SENSOR;
+  RearPOA  : ARRAY[1..30] OF UDT_SENSOR;
+  BOMTemp  : ARRAY[1..30] OF UDT_SENSOR;
 END_VAR
 
 VAR CONSTANT
@@ -109,9 +108,8 @@ RTPP(
     InvEfficiency         := 0.98,
     PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
-    ActivePowerMW         := SITE_HS1_KW_3PH.instMag * 0.001,          // TODO
+    ActivePowerMW         := SITE_HS1_KW_3PH.instMag * 0.001,          // TODO: PV generation meter in MW
     PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag,       // TODO
-    PV_HV_MW              := SITE_PPC_PV_P_HV.instMag,                 // TODO
 
     RegressionIntervalS   := T#60S
 );
@@ -132,7 +130,7 @@ BOM_AVG             := RTPP.BOMTemp_Avg;
 
 ## 5. Commissioning Checks
 
-- [ ] Verify ActivePowerMW is MW (not kW).
+- [ ] Verify ActivePowerMW is PV generation meter in MW (not kW).
 - [ ] Verify AvailableInverters is in range 0..TotalInverters.
 - [ ] Verify sensor quality bits are valid when expected.
 - [ ] Verify Reg_N increments during normal daytime uncurtailed operation.

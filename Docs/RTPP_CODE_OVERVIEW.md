@@ -12,14 +12,14 @@ The code estimates plant real-time power potential (RTPP) and an HSL output usin
 
 In short:
 
-- `rtppCalc` computes a model-based RTPP.
+- `FB_RTPP_CALC` computes a model-based RTPP.
 - `RTPP_REG` learns correction coefficients (`M`, `C`) online.
-- `rtppMain` orchestrates everything and produces final outputs.
+- `FB_RTPP` orchestrates everything and produces final outputs.
 - `RTPP_PROGRAM` maps site tags to generic library inputs.
 
 ## Main Files and Roles
 
-### `rtppMain.xml`
+### `FB_RTPP.xml`
 
 Top-level function block that coordinates the workflow.
 
@@ -36,7 +36,7 @@ Sections:
 - **STEP 5: Corrected RTPP**
   - Applies correction: `RTPP_TOTAL * RTPP_Reg_M + TotalAvailable * RTPP_Reg_C`.
 - **STEP 6: HSL logic**
-  - Sets HSL based on curtailed vs uncurtailed behavior.
+  - Uses `ActivePowerMW` (PV generation meter) and setpoint state.
 - **STEP 7: Output mapping**
   - Publishes primary outputs and diagnostics.
 
@@ -47,7 +47,7 @@ Outputs include:
 - Regression diagnostics (`Reg_M`, `Reg_C`, `Reg_N`)
 - Sensor averages and online counts
 
-### `rtppCalc.xml`
+### `FB_RTPP_CALC.xml`
 
 Physics model block.
 
@@ -74,7 +74,7 @@ Behavior:
 - Updates `M`, `C` by reference (`VAR_IN_OUT`) so retained globals persist across reboot.
 - Exposes sample count `N` for diagnostics.
 
-### `SensorAverage.xml`
+### `FB_SENSOR_AVG.xml`
 
 Reusable averaging helper.
 
@@ -83,7 +83,7 @@ Purpose:
 - Filters sensors by quality and configured min/max bounds.
 - Returns average and count of valid sensors.
 
-### `sensor.xml`
+### `UDT_SENSOR.xml`
 
 Shared sensor data type (`Quality`, `Value`, optional ignore flag).
 
@@ -107,16 +107,16 @@ This is the file you customize per site:
 
 1. Map site tags into generic sensor arrays.
 2. Set plant constants (inverter count, capacities, POI, dates).
-3. Call `rtppMain` with mapped tags and constants.
+3. Call `FB_RTPP` with mapped tags and constants.
 4. Publish outputs to global MVs.
 
 ## Data Flow Summary
 
 1. Site tags -> sensor arrays (`RTPP_PROGRAM`).
-2. Sensor arrays -> filtered averages (`SensorAverage`).
-3. Averages + plant params -> model RTPP (`rtppCalc`).
+2. Sensor arrays -> filtered averages (`FB_SENSOR_AVG`).
+3. Averages + plant params -> model RTPP (`FB_RTPP_CALC`).
 4. Model RTPP + metered active power -> regression update (`RTPP_REG`).
-5. Corrected RTPP + HSL logic -> final outputs (`rtppMain`).
+5. Corrected RTPP + HSL logic -> final outputs (`FB_RTPP`).
 6. Final outputs -> global points for external use (`RTPP_PROGRAM` / `RTPP_GLOBALS`).
 
 ## Design Intent

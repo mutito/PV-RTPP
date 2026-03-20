@@ -49,11 +49,8 @@ VAR_INPUT
 
 	// --- Regression conditioning inputs ---
 	// These come from your site SCADA/PPC tags in the wrapper.
-	ActivePowerMW      : REAL; // Metered plant active power (MW) from revenue meter
+	ActivePowerMW      : REAL; // PV generation meter active power (MW)
 	PSetpointMW        : REAL; // Current active power setpoint (MW) from PPC/RTU
-
-	// --- HSL inputs (from site tags in wrapper) ---
-	PV_HV_MW           : REAL; // PV power measured at HV side (MW)
 
 	// --- Regression timer ---
 	RegressionIntervalS: TIME; // How often to update regression (e.g. T#60S)
@@ -192,10 +189,10 @@ RTPP_estimate := MAX(MIN(RTPP_TOTAL * RTPP_Reg_M + TotalAvailable * RTPP_Reg_C, 
 // ============================================================
 IF PSetpointMW >= PlantPOILimitMW THEN
 	// Not curtailed
-	HSL_MW := MIN(PV_HV_MW, PlantPOILimitMW);
+	HSL_MW := MIN(ActivePowerMW, PlantPOILimitMW);
 ELSE
 	// Curtailed: HSL must not go below RTPP estimate
-	HSL_MW := MAX(MIN(PV_HV_MW, PlantPOILimitMW), RTPP_estimate);
+	HSL_MW := MAX(MIN(ActivePowerMW, PlantPOILimitMW), RTPP_estimate);
 END_IF
 
 // ============================================================
