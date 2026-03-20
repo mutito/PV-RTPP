@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <POU>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+	<n>FB_SENSOR_AVG</n>
+    <POUKind>FunctionBlock</POUKind>
+    <Content>
+      <Interface><![CDATA[FUNCTION_BLOCK FB_SENSOR_AVG
+VAR_INPUT
+	Sensors         : ARRAY [1..30] OF UDT_SENSOR;
+	NumberOfSensors : INT;
+	SensorMin       : REAL;
+	SensorMax       : REAL;
+END_VAR
+
+VAR
+	i                : INT;
+	SumSensorsValues : REAL;
+END_VAR
+
+VAR_OUTPUT
+	SensorAverage : REAL;
+	Count         : INT;
+END_VAR
+]]></Interface>
+      <Implementation><![CDATA[
+SumSensorsValues := 0;
+Count            := 0;
+
+IF NumberOfSensors >= 1 THEN
+	FOR i := 1 TO NumberOfSensors DO
+		IF NOT(Sensors[i].IgnoreValue)
+		   AND Sensors[i].Quality = validity_t.good
+		   AND Sensors[i].Value > SensorMin
+		   AND Sensors[i].Value <= SensorMax THEN
+			SumSensorsValues := SumSensorsValues + Sensors[i].Value;
+			Count            := Count + 1;
+		END_IF
+	END_FOR
+END_IF;
+
+IF Count > 0 THEN
+	SensorAverage := SumSensorsValues / Count;
+ELSE
+	SensorAverage := 0;
+END_IF
+]]></Implementation>
+    </Content>
+  </POU>
+</RTACModule>

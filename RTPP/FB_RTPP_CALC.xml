@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <POU>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+	<n>FB_RTPP_CALC</n>
+    <POUKind>FunctionBlock</POUKind>
+    <Content>
+	<Interface><![CDATA[FUNCTION_BLOCK FB_RTPP_CALC
+
+VAR_INPUT
+	averageIrr        : REAL; // Front POA irradiance average (W/m2)
+	rearIrr           : REAL; // Rear POA irradiance average (W/m2)
+	tempBOMAverage    : REAL; // Back-of-module temperature average (degC)
+	bifacialityFactor : REAL; // Module bifaciality coefficient (e.g. 0.70)
+	tempCoef          : REAL; // Temperature coefficient of power (%/degC, negative, e.g. -0.0034)
+	degradationRate   : REAL; // Annual degradation rate (e.g. 0.005 = 0.5%/year)
+	dcLossesPercent   : REAL; // DC wiring/mismatch losses as fraction (e.g. 0.005)
+	acLossesPercent   : REAL; // AC transformer/cable losses as fraction (e.g. 0.015)
+	invEfficiency     : REAL; // Inverter efficiency as fraction (e.g. 0.98)
+	dcPowerNominalMW  : REAL; // Nameplate DC capacity of this unit (MW)
+	totalInverters    : REAL; // Total inverter count in this unit
+	availableInverters: REAL; // Number of inverters currently running (op code 309)
+	commYear          : DINT; // Commercial operation year (e.g. 2024)
+	commMonth         : DINT; // Commercial operation month (e.g. 8)
+	POILimitMW        : REAL; // Point-of-interconnect AC export limit (MW)
+END_VAR
+
+VAR
+	tempRef          : REAL := 25.0;
+	safeBifaciality  : REAL;
+	safeInvEfficiency: REAL;
+	safeDCLosses     : REAL;
+	safeACLosses     : REAL;
+	bifacialGain     : REAL;
+	effectiveIrr     : REAL;
+	tempFactor       : REAL;
+	degradationFactor: REAL;
+	dcPowerOutput    : REAL;
+	yearsOfOperation : REAL;
+	Year             : DINT;
+	Month            : DINT;
+END_VAR
+
+VAR_OUTPUT
+	acPowerOutputMW : REAL;
+END_VAR
+]]></Interface>
+      <Implementation><![CDATA[
+(* Clamp configuration inputs to physically meaningful bounds *)
+safeBifaciality   := MAX(MIN(bifacialityFactor, 1.5), 0.0);
+safeInvEfficiency := MAX(MIN(invEfficiency, 1.0), 0.0);
+safeDCLosses      := MAX(MIN(dcLossesPercent, 1.0), 0.0);
+safeACLosses      := MAX(MIN(acLossesPercent, 1.0), 0.0);
+
+(* Step 1: Bifacial gain = rear/front ratio * module bifaciality factor *)
+(* MAX(..., 1.0) prevents divide-by-zero at night                       *)
+bifacialGain := (rearIrr / MAX(averageIrr, 1.0)) * safeBifaciality;
+
+(* Step 2: Effective irradiance including bifacial contribution *)
+effectiveIrr := averageIrr * (1.0 + bifacialGain);
+
+(* Step 3: Temperature derating factor *)
+tempFactor := 1.0 + tempCoef * (tempBOMAverage - tempRef);
+
+(* Step 4: Degradation factor based on elapsed time since COD *)
+dateTime_t_Deconstructor(
+    Value := System_Time_Control_POU.System_Time.value,
+    Year  => Year,
+    Month => Month);
+yearsOfOperation  := (DINT_TO_REAL(Month - 1) / 12.0 + DINT_TO_REAL(Year))
+				   - (DINT_TO_REAL(commMonth - 1) / 12.0 + DINT_TO_REAL(commYear));
+degradationFactor := MAX(MIN(1.0 - degradationRate * yearsOfOperation, 1.0), 0.7);
+
+(* Step 5: DC power after irradiance, temperature, degradation and DC losses *)
+dcPowerOutput := dcPowerNominalMW
+               * (effectiveIrr / 1000.0)
+               * tempFactor
+               * degradationFactor
+			   * (1.0 - safeDCLosses);
+
+(* Step 6: AC power after inverter efficiency and availability fraction *)
+acPowerOutputMW := dcPowerOutput
+				 * safeInvEfficiency
+                 * availableInverters / MAX(totalInverters, 1.0);
+
+(* Step 7: AC cable/transformer losses *)
+acPowerOutputMW := acPowerOutputMW * (1.0 - safeACLosses);
+
+(* Step 8: Clamp to POI export limit *)
+IF acPowerOutputMW > POILimitMW THEN
+	acPowerOutputMW := POILimitMW;
+END_IF
+
+IF acPowerOutputMW < 0.0 THEN
+	acPowerOutputMW := 0.0;
+END_IF
+]]></Implementation>
+    </Content>
+  </POU>
+</RTACModule>

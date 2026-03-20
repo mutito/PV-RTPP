@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <GVL>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+    <n>RTPP_GLOBALS</n>
+    <Content><![CDATA[VAR_GLOBAL
+	// These globals are written by the site wrapper PROGRAM and can be
+	// trended or mapped to DNP/SCADA from here.
+	// If your plant uses a different naming convention, rename freely -
+	// only the site wrapper PROGRAM references these names.
+	RTPP_OUTPUT  : MV; // Real-time power potential (regression corrected), MW
+	HSL_OUTPUT   : MV; // High setpoint limit for PPC, MW
+
+	FRONT_POA_AVG : REAL; // Average front POA irradiance, W/m2
+	REAR_POA_AVG  : REAL; // Average rear POA irradiance, W/m2
+	BOM_AVG       : REAL; // Average back-of-module temperature, degC
+END_VAR
+
+VAR_GLOBAL RETAIN
+	// Regression coefficients — retained across controller restarts.
+	// Initialised to identity (no correction) so RTPP is valid from first scan.
+	RTPP_Reg_M : REAL := 1.0; // Regression slope
+	RTPP_Reg_C : REAL := 0.0; // Regression intercept
+END_VAR
+]]></Content>
+  </GVL>
+</RTACModule>

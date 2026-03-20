@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <DataType>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+    <n>UDT_SENSOR</n>
+    <Content><![CDATA[TYPE UDT_SENSOR :
+STRUCT
+	Quality     : VALIDITY_T;
+	Value       : REAL;
+	IgnoreValue : BOOL := FALSE;
+END_STRUCT
+END_TYPE
+]]></Content>
+  </DataType>
+</RTACModule>

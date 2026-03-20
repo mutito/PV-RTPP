@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <POU>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+	<n>FB_RTPP</n>
+    <POUKind>FunctionBlock</POUKind>
+    <Content>
+	<Interface><![CDATA[FUNCTION_BLOCK FB_RTPP
+// ============================================================
+// GENERIC RTPP FUNCTION BLOCK
+// Supports a single inverter unit and up to 100 inverters.
+// All site-specific values are passed as VAR_INPUT.
+// Instantiate once per plant in a site-specific PROGRAM wrapper.
+// ============================================================
+
+VAR_INPUT
+	// --- Inverter availability ---
+	TotalInverters       : REAL; // Total inverters in the plant
+	AvailableInverters   : REAL; // Number of inverters currently running (from SCADA)
+
+	// --- Front POA irradiance sensors (populate Quality + Value from met station tags) ---
+	FrontPOASensors    : ARRAY[1..30] OF UDT_SENSOR;
+	NumberOfFPOASensors: INT;
+
+	// --- Rear POA irradiance sensors ---
+	RearPOASensors     : ARRAY[1..30] OF UDT_SENSOR;
+	NumberOfRPOASensors: INT;
+
+	// --- Back-of-module temperature sensors ---
+	BOMTempSensors         : ARRAY[1..30] OF UDT_SENSOR;
+	NumberOfBOMTempSensors : INT;
+
+	// --- Plant parameters ---
+	DCPowerNominalMW  : REAL; // Nameplate DC capacity (MW)
+	commYear          : DINT; // COD year
+	commMonth         : DINT; // COD month
+
+	// --- Electrical parameters ---
+	BifacialityFactor  : REAL; // Module bifaciality coefficient (e.g. 0.70)
+	TempCoef           : REAL; // Power temp coefficient (%/degC, negative, e.g. -0.0034)
+	DegradationRate    : REAL; // Annual degradation fraction (e.g. 0.005)
+	DCLossesPercent    : REAL; // DC losses fraction (e.g. 0.005)
+	ACLossesPercent    : REAL; // AC losses fraction (e.g. 0.015)
+	InvEfficiency      : REAL; // Inverter efficiency fraction (e.g. 0.98)
+	PlantPOILimitMW    : REAL; // Overall plant POI limit for final clamp (MW)
+
+	// --- Regression conditioning inputs ---
+	// These come from your site SCADA/PPC tags in the wrapper.
+	ActivePowerMW      : REAL; // Metered plant active power (MW) from revenue meter
+	PSetpointMW        : REAL; // Current active power setpoint (MW) from PPC/RTU
+
+	// --- HSL inputs (from site tags in wrapper) ---
+	PV_HV_MW           : REAL; // PV power measured at HV side (MW)
+
+	// --- Regression timer ---
+	RegressionIntervalS: TIME; // How often to update regression (e.g. T#60S)
+END_VAR
+
+VAR
+	// Internal instances
+	FrontPOAAvg  : FB_SENSOR_AVG;
+	RearPOAAvg   : FB_SENSOR_AVG;
+	BOMTempAvg   : FB_SENSOR_AVG;
+	PlantCalc    : FB_RTPP_CALC;
+	Reg          : RTPP_REG;
+	RegTimer     : TON;
+
+	// Computed availability
+	TotalAvailable : REAL;
+
+	// Averages
+	FrontPOAAverage : REAL;
+	RearPOAAverage  : REAL;
+	BOMTempAverage  : REAL;
+
+	// RTPP results
+	RTPP_TOTAL    : REAL;
+	RTPP_estimate : REAL;
+
+	N_Samples : INT;
+END_VAR
+
+VAR_OUTPUT
+	// --- Primary outputs (write to your site MV tags in the wrapper) ---
+	RTPP_MW         : REAL; // Real-time power potential (MW), regression-corrected
+	HSL_MW          : REAL; // High setpoint limit (MW) for PPC
+
+	// --- Diagnostics (expose to SCADA) ---
+	Reg_M           : REAL; // Regression slope
+	Reg_C           : REAL; // Regression intercept
+	Reg_N           : INT;  // Regression sample count
+	FrontPOA_Avg    : REAL; // Front irradiance average (W/m2)
+	RearPOA_Avg     : REAL; // Rear irradiance average (W/m2)
+	BOMTemp_Avg     : REAL; // BOM temperature average (degC)
+	FrontSensOnline : INT;  // Number of valid front POA sensors
+	RearSensOnline  : INT;  // Number of valid rear POA sensors
+	BOMSensOnline   : INT;  // Number of valid BOM temp sensors
+	Avail           : REAL; // Available inverters
+END_VAR
+]]></Interface>
+      <Implementation><![CDATA[
+// ============================================================
+// STEP 1: Set available inverters from input
+// ============================================================
+TotalAvailable := MAX(MIN(AvailableInverters, TotalInverters), 0.0);
+
+// ============================================================
+// STEP 2: Compute sensor averages
+// ============================================================
+FrontPOAAvg(
+	Sensors         := FrontPOASensors,
+	NumberOfSensors := NumberOfFPOASensors,
+	SensorMin       := 0.0,
+	SensorMax       := 1500.0,
+	SensorAverage   => FrontPOAAverage,
+	Count           => FrontSensOnline);
+
+RearPOAAvg(
+	Sensors         := RearPOASensors,
+	NumberOfSensors := NumberOfRPOASensors,
+	SensorMin       := 0.0,
+	SensorMax       := 500.0,
+	SensorAverage   => RearPOAAverage,
+	Count           => RearSensOnline);
+
+BOMTempAvg(
+	Sensors         := BOMTempSensors,
+	NumberOfSensors := NumberOfBOMTempSensors,
+	SensorMin       := -20.0,
+	SensorMax       := 100.0,
+	SensorAverage   => BOMTempAverage,
+	Count           => BOMSensOnline);
+
+// ============================================================
+// STEP 3: Compute RTPP
+// ============================================================
+PlantCalc(
+	averageIrr         := FrontPOAAverage,
+	rearIrr            := RearPOAAverage,
+	tempBOMAverage     := BOMTempAverage,
+	bifacialityFactor  := BifacialityFactor,
+	tempCoef           := TempCoef,
+	degradationRate    := DegradationRate,
+	dcLossesPercent    := DCLossesPercent,
+	acLossesPercent    := ACLossesPercent,
+	invEfficiency      := InvEfficiency,
+	dcPowerNominalMW   := DCPowerNominalMW,
+	totalInverters     := TotalInverters,
+	availableInverters := AvailableInverters,
+	commYear           := commYear,
+	commMonth          := commMonth,
+	POILimitMW         := PlantPOILimitMW,
+	acPowerOutputMW    => RTPP_TOTAL);
+
+// ============================================================
+// STEP 4: Online regression update (timed, conditioned)
+// ============================================================
+RegTimer(IN := TRUE, PT := RegressionIntervalS);
+
+IF RegTimer.Q THEN
+	RegTimer(IN := FALSE);
+
+	// Conditions: uncurtailed + daytime + inverters running
+	IF PSetpointMW >= PlantPOILimitMW
+	   AND FrontPOAAverage > 50.0
+	   AND RTPP_TOTAL   > 0.0
+	   AND TotalAvailable > 0.0 THEN
+
+		Reg(
+			rtpp     := RTPP_TOTAL / TotalAvailable,
+			active_p := ActivePowerMW / TotalAvailable,
+			M        := RTPP_Reg_M,
+			C        := RTPP_Reg_C,
+			N        => N_Samples);
+	END_IF
+END_IF
+
+IF NOT RegTimer.IN THEN
+	RegTimer(IN := TRUE);
+END_IF
+
+// ============================================================
+// STEP 5: Apply regression correction and clamp
+// ============================================================
+RTPP_estimate := MAX(MIN(RTPP_TOTAL * RTPP_Reg_M + TotalAvailable * RTPP_Reg_C, PlantPOILimitMW), 0.0);
+
+// ============================================================
+// STEP 6: HSL calculation
+// ============================================================
+IF PSetpointMW >= PlantPOILimitMW THEN
+	// Not curtailed
+	HSL_MW := MIN(PV_HV_MW, PlantPOILimitMW);
+ELSE
+	// Curtailed: HSL must not go below RTPP estimate
+	HSL_MW := MAX(MIN(PV_HV_MW, PlantPOILimitMW), RTPP_estimate);
+END_IF
+
+// ============================================================
+// STEP 7: Map outputs
+// ============================================================
+RTPP_MW      := RTPP_estimate;
+Reg_M        := RTPP_Reg_M;
+Reg_C        := RTPP_Reg_C;
+Reg_N        := N_Samples;
+FrontPOA_Avg := FrontPOAAverage;
+RearPOA_Avg  := RearPOAAverage;
+BOMTemp_Avg  := BOMTempAverage;
+Avail        := AvailableInverters;
+]]></Implementation>
+    </Content>
+  </POU>
+</RTACModule>

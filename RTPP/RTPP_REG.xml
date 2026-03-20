@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <POU>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+    <n>RTPP_REG</n>
+    <POUKind>FunctionBlock</POUKind>
+    <Content>
+      <Interface><![CDATA[FUNCTION_BLOCK RTPP_REG
+// Online linear regression: learns correction y = M*x + C
+// where x = physics-model RTPP per inverter, y = actual metered power per inverter.
+// Call only during uncurtailed, BESS-idle, daytime conditions.
+// Outputs M (slope) and C (intercept) used by FB_RTPP to correct RTPP_TOTAL.
+
+VAR_INPUT
+	rtpp     : REAL; // Physics-model RTPP per inverter (MW)
+	active_p : REAL; // Metered active power per inverter (MW)
+END_VAR
+
+VAR_IN_OUT
+	M : REAL; // Regression slope (retained global reference)
+	C : REAL; // Regression intercept (retained global reference)
+END_VAR
+
+VAR_OUTPUT
+	N : INT  := 0;   // Current sample count (exposed for SCADA diagnostics)
+END_VAR
+
+VAR
+	x      : ARRAY[1..1000] OF REAL;
+	y      : ARRAY[1..1000] OF REAL;
+	sum_x  : REAL := 0;
+	sum_y  : REAL := 0;
+	sum_xy : REAL := 0;
+	sum_x2 : REAL := 0;
+	denom  : REAL;
+	i      : INT;
+END_VAR
+]]></Interface>
+      <Implementation><![CDATA[
+// --- FIFO buffer: shift left when full ---
+IF N < 1000 THEN
+	N := N + 1;
+ELSE
+	FOR i := 1 TO 999 DO
+		x[i] := x[i + 1];
+		y[i] := y[i + 1];
+	END_FOR
+END_IF
+
+// Add newest sample at end of buffer
+x[N] := rtpp;
+y[N] := active_p;
+
+// --- Regression: require at least 50 samples ---
+IF N > 50 THEN
+	sum_x  := 0;
+	sum_y  := 0;
+	sum_xy := 0;
+	sum_x2 := 0;
+
+	FOR i := 1 TO N DO
+		sum_x  := sum_x  + x[i];
+		sum_y  := sum_y  + y[i];
+		sum_xy := sum_xy + x[i] * y[i];
+		sum_x2 := sum_x2 + x[i] * x[i];
+	END_FOR
+
+	// Denominator guard: avoid divide-by-zero if all x values identical
+	denom := INT_TO_REAL(N) * sum_x2 - sum_x * sum_x;
+	IF ABS(denom) > 0.0001 THEN
+		M := (INT_TO_REAL(N) * sum_xy - sum_x * sum_y) / denom;
+		C := (sum_y - M * sum_x) / INT_TO_REAL(N);
+	END_IF
+END_IF
+]]></Implementation>
+    </Content>
+  </POU>
+</RTACModule>
