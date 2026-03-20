@@ -5,7 +5,7 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-	<n>FB_SENSOR_AVG</n>
+	<Name>FB_SENSOR_AVG</Name>
     <POUKind>FunctionBlock</POUKind>
     <Content>
       <Interface><![CDATA[FUNCTION_BLOCK FB_SENSOR_AVG

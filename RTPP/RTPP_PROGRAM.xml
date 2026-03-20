@@ -5,7 +5,7 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-    <n>RTPP_PROGRAM</n>
+    <Name>RTPP_PROGRAM</Name>
     <POUKind>Program</POUKind>
     <Content>
       <Interface><![CDATA[PROGRAM RTPP_PROGRAM

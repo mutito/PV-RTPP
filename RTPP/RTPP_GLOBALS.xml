@@ -5,7 +5,7 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-    <n>RTPP_GLOBALS</n>
+    <Name>RTPP_GLOBALS</Name>
     <Content><![CDATA[VAR_GLOBAL
 	// These globals are written by the site wrapper PROGRAM and can be
 	// trended or mapped to DNP/SCADA from here.

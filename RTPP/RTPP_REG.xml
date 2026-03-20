@@ -5,7 +5,7 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-    <n>RTPP_REG</n>
+    <Name>RTPP_REG</Name>
     <POUKind>FunctionBlock</POUKind>
     <Content>
       <Interface><![CDATA[FUNCTION_BLOCK RTPP_REG

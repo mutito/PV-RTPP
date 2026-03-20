@@ -5,7 +5,7 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-    <n>UDT_SENSOR</n>
+    <Name>UDT_SENSOR</Name>
     <Content><![CDATA[TYPE UDT_SENSOR :
 STRUCT
 	Quality     : VALIDITY_T;
