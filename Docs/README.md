@@ -4,13 +4,13 @@ Reusable RTAC RTPP library with site adapter pattern.
 
 ## Current Module Names
 
-- `RTPP_CALC/RTPP_GLOBALS.xml`
-- `RTPP_CALC/UDT_SENSOR.xml`
-- `RTPP_CALC/FB_SENSOR_AVG.xml`
-- `RTPP_CALC/FB_RTPP_CALC.xml`
-- `RTPP_CALC/RTPP_REG.xml`
-- `RTPP_CALC/FB_RTPP.xml`
-- `RTPP_CALC/RTPP_PROGRAM.xml`
+- [RTPP_CALC/RTPP_GLOBALS.xml](../RTPP_CALC/RTPP_GLOBALS.xml)
+- [RTPP_CALC/UDT_SENSOR.xml](../RTPP_CALC/UDT_SENSOR.xml)
+- [RTPP_CALC/FB_SENSOR_AVG.xml](../RTPP_CALC/FB_SENSOR_AVG.xml)
+- [RTPP_CALC/FB_RTPP_CALC.xml](../RTPP_CALC/FB_RTPP_CALC.xml)
+- [RTPP_CALC/RTPP_REG.xml](../RTPP_CALC/RTPP_REG.xml)
+- [RTPP_CALC/FB_RTPP.xml](../RTPP_CALC/FB_RTPP.xml)
+- [RTPP_CALC/RTPP_PROGRAM.xml](../RTPP_CALC/RTPP_PROGRAM.xml)
 
 ## Key Metering Note
 
@@ -22,15 +22,14 @@ Reusable RTAC RTPP library with site adapter pattern.
 
 ## Docs
 
-- Implementation template: `Docs/RTPP_IMPLEMENTATION_TEMPLATE.md`
-- Code overview: `Docs/RTPP_CODE_OVERVIEW.md`
-- Commercial license template: `Docs/LICENSE-COMMERCIAL.md`
-- Contribution guide: `../CONTRIBUTING.md`
-- License: `../LICENSE`
+- Implementation template: [RTPP_IMPLEMENTATION_TEMPLATE.md](RTPP_IMPLEMENTATION_TEMPLATE.md)
+- Code overview: [RTPP_CODE_OVERVIEW.md](RTPP_CODE_OVERVIEW.md)
+- Contribution guide: [../CONTRIBUTING.md](../CONTRIBUTING.md)
+- License: [../LICENSE](../LICENSE)
 
 ## Integration Rule
 
-Keep all site-specific tag mappings in `RTPP_CALC/RTPP_PROGRAM.xml`. Keep core FB logic generic.
+Keep all site-specific tag mappings in [RTPP_CALC/RTPP_PROGRAM.xml](../RTPP_CALC/RTPP_PROGRAM.xml). Keep core FB logic generic.
 
 ## Contributing
 
@@ -42,4 +41,4 @@ Before opening a PR:
 - Update docs if behavior, interfaces, or configuration changes.
 - Include enough context in the PR description for review and validation.
 
-See `../CONTRIBUTING.md` for the full process.
+See [../CONTRIBUTING.md](../CONTRIBUTING.md) for the full process.
