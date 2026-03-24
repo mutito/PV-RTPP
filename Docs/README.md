@@ -19,15 +19,14 @@ Reusable RTAC RTPP library with site adapter pattern.
 - Regression update target (`RTPP_REG` via `active_p` input)
 - HSL calculation path in `FB_RTPP`
 
-`PV_HV_MW` input has been removed from the current interface.
 
 ## Docs
 
 - Implementation template: `Docs/RTPP_IMPLEMENTATION_TEMPLATE.md`
 - Code overview: `Docs/RTPP_CODE_OVERVIEW.md`
 - Commercial license template: `Docs/LICENSE-COMMERCIAL.md`
-- Contribution guide: `CONTRIBUTING.md`
-- License: `LICENSE`
+- Contribution guide: `../CONTRIBUTING.md`
+- License: `../LICENSE`
 
 ## Integration Rule
 
@@ -43,4 +42,4 @@ Before opening a PR:
 - Update docs if behavior, interfaces, or configuration changes.
 - Include enough context in the PR description for review and validation.
 
-See `CONTRIBUTING.md` for the full process.
+See `../CONTRIBUTING.md` for the full process.

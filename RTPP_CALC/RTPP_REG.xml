@@ -31,12 +31,16 @@ END_VAR
 VAR
 	x      : ARRAY[1..1000] OF REAL;
 	y      : ARRAY[1..1000] OF REAL;
+	sum_w  : REAL := 0;
 	sum_x  : REAL := 0;
 	sum_y  : REAL := 0;
 	sum_xy : REAL := 0;
 	sum_x2 : REAL := 0;
 	denom  : REAL;
+	alpha  : REAL := 0.98;
+	w      : REAL := 1.0;
 	i      : INT;
+	j      : INT;
 END_VAR
 ]]></Interface>
       <Implementation><![CDATA[
@@ -56,23 +60,36 @@ y[N] := active_p;
 
 // --- Regression: require at least 50 samples ---
 IF N > 50 THEN
+	sum_w  := 0;
 	sum_x  := 0;
 	sum_y  := 0;
 	sum_xy := 0;
 	sum_x2 := 0;
 
-	FOR i := 1 TO N DO
-		sum_x  := sum_x  + x[i];
-		sum_y  := sum_y  + y[i];
-		sum_xy := sum_xy + x[i] * y[i];
-		sum_x2 := sum_x2 + x[i] * x[i];
+	// Recency weighting: newest sample has highest weight.
+	// With alpha = 0.98, weight decays smoothly for older samples.
+	w := 1.0;
+	FOR j := 1 TO N - 1 DO
+		w := w * alpha;
 	END_FOR
 
-	// Denominator guard: avoid divide-by-zero if all x values identical
-	denom := INT_TO_REAL(N) * sum_x2 - sum_x * sum_x;
-	IF ABS(denom) > 0.0001 THEN
-		M := (INT_TO_REAL(N) * sum_xy - sum_x * sum_y) / denom;
-		C := (sum_y - M * sum_x) / INT_TO_REAL(N);
+	FOR i := 1 TO N DO
+		sum_w  := sum_w  + w;
+		sum_x  := sum_x  + w * x[i];
+		sum_y  := sum_y  + w * y[i];
+		sum_xy := sum_xy + w * x[i] * y[i];
+		sum_x2 := sum_x2 + w * x[i] * x[i];
+
+		IF i < N THEN
+			w := w / alpha;
+		END_IF
+	END_FOR
+
+	// Denominator guard: avoid divide-by-zero if weighted x values are nearly identical
+	denom := sum_w * sum_x2 - sum_x * sum_x;
+	IF ABS(denom) > 0.0001 AND sum_w > 0.0001 THEN
+		M := (sum_w * sum_xy - sum_x * sum_y) / denom;
+		C := (sum_y - M * sum_x) / sum_w;
 	END_IF
 END_IF
 ]]></Implementation>

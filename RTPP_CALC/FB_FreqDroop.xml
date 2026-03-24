@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <POU>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3350</DeviceMOT>
+    </ExportSource>
+    <Name>FB_FreqDroop</Name>
+    <POUKind>FunctionBlock</POUKind>
+    <Content>
+      <Interface><![CDATA[FUNCTION_BLOCK FB_FreqDroop
+VAR_INPUT
+    f_grid_Hz      : LREAL;
+    f_test_Hz      : LREAL;
+    f_nominal_Hz   : LREAL;
+    Deadband_Hz    : LREAL;
+    Droop_R_pu     : LREAL;
+    P_rated_MW     : LREAL;
+    bTestMode      : BOOL;
+END_VAR
+VAR_OUTPUT
+    P_delta_pu     : LREAL;
+    P_delta_MW     : LREAL;
+    bActiveResponse: BOOL;
+END_VAR
+VAR
+    f_current_Hz   : LREAL;
+    f_deviation_Hz : LREAL;
+    f_deadbanded_deviation_Hz : LREAL;
+    bLastActiveResponse : BOOL;
+END_VAR
+
+]]></Interface>
+      <Implementation><![CDATA[
+(* Select frequency source based on test mode *)
+IF bTestMode THEN
+    f_current_Hz := f_test_Hz;
+ELSE
+    f_current_Hz := f_grid_Hz;
+END_IF;
+
+f_deviation_Hz := f_current_Hz - f_nominal_Hz;
+
+(* Determine if the frequency is outside the deadband *)
+IF ABS(f_deviation_Hz) > Deadband_Hz AND  THEN
+    bActiveResponse := TRUE;
+ELSE
+    bActiveResponse := FALSE;
+END_IF;
+
+(* Only compute power change when frequency is outside the deadband and it's a new occurrence *)
+IF bActiveResponse THEN
+    f_deadbanded_deviation_Hz := f_deviation_Hz - SIGN(f_deviation_Hz) * Deadband_Hz;
+
+    (* Calculate per unit power change using the droop equation *)
+    IF Droop_R_pu <> 0.0 THEN
+        P_delta_pu := - (f_deadbanded_deviation_Hz / f_nominal_Hz) / Droop_R_pu;
+    ELSE
+        P_delta_pu := 0.0;
+    END_IF;
+
+    (* Clamp the output to be within the allowable range [-1.0, 1.0]pu *)
+    P_delta_pu := LIMIT(-1.0, P_delta_pu, 1.0);
+
+    (* Convert per unit power change to MW *)
+    P_delta_MW := P_delta_pu * P_rated_MW;
+ELSE
+    (* Reset outputs to zero when frequency is within the deadband *)
+    P_delta_pu := 0.0;
+    P_delta_MW := 0.0;
+END_IF;
+
+
+
+]]></Implementation>
+    </Content>
+  </POU>
+</RTACModule>

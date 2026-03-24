@@ -43,6 +43,17 @@ END_VAR
 ]]></Interface>
       <Implementation><![CDATA[
 // ============================================================
+// IMPORT-SAFE TEMPLATE
+// This implementation is intentionally commented to avoid import
+// errors when site-specific tags are not present.
+//
+// Action required:
+// 1) Uncomment this block.
+// 2) Replace all placeholder/site example tags with your site tags.
+// 3) Keep all site-specific mapping changes in this file only.
+// ============================================================
+(*
+// ============================================================
 // SECTION 1: Map site tags to front POA sensors
 // ============================================================
 FrontPOA[1].Quality := Tags.SITE_DMET1_IRRAD_FPOA.status.q.validity;
@@ -127,7 +138,7 @@ RTPP(
 
 	// Regression conditioning (site tags)
 	// ActivePowerMW must be the PV generation meter in MW.
-	ActivePowerMW         := SITE_HS1_KW_3PH.instMag * 0.001,
+	ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,
 	PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag,
 
 	// Regression timer
@@ -149,6 +160,7 @@ HSL_OUTPUT.q        := GOOD_QUALITY;
 FRONT_POA_AVG          := RTPP.FrontPOA_Avg;
 REAR_POA_AVG           := RTPP.RearPOA_Avg;
 BOM_AVG                := RTPP.BOMTemp_Avg;
+*)
 ]]></Implementation>
     </Content>
   </POU>

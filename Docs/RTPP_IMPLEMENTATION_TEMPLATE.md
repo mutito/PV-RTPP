@@ -2,7 +2,14 @@
 
 Use this checklist and template to deploy the RTPP library to a new site.
 
-## 1. Required Modules
+## 1. Initial Setup
+
+Complete these steps first:
+
+- Download the RTPP code from GitHub.
+- In RTAC User Logic, create a folder named RTTP .
+
+## 2. Required Modules
 
 Import these modules into the RTAC project:
 
@@ -14,7 +21,7 @@ Import these modules into the RTAC project:
 - FB_RTPP.xml
 - RTPP_PROGRAM.xml
 
-## 2. One-Time Library Rules
+## 3. One-Time Library Rules
 
 - Do not edit FB_RTPP.xml, FB_RTPP_CALC.xml, RTPP_REG.xml for site tag naming.
 - Keep all site-specific mappings in RTPP_PROGRAM.xml only.
@@ -22,7 +29,13 @@ Import these modules into the RTAC project:
   - RTPP_Reg_M := 1.0
   - RTPP_Reg_C := 0.0
 
-## 3. Site Configuration Checklist
+## 4. Site Configuration Checklist
+
+Important: The implementation body in RTPP_PROGRAM.xml is provided as an import-safe commented template.
+
+- [ ] Uncomment the implementation block in RTPP_PROGRAM.xml.
+- [ ] Replace all example tags with your site-specific tags.
+- [ ] Keep all site-specific changes in RTPP_PROGRAM.xml only.
 
 Update the following constants in RTPP_PROGRAM.xml:
 
@@ -44,7 +57,7 @@ Update these tag mappings in RTPP_PROGRAM.xml:
 - [ ] ActivePowerMW tag (PV generation meter, in MW)
 - [ ] PSetpointMW tag
 
-## 4. Deployment Template (Site Wrapper)
+## 5. Deployment Template (Site Wrapper)
 
 Copy and adapt this structure in RTPP_PROGRAM.xml.
 
@@ -108,7 +121,7 @@ RTPP(
     InvEfficiency         := 0.98,
     PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
-    ActivePowerMW         := SITE_HS1_KW_3PH.instMag * 0.001,          // TODO: PV generation meter in MW
+    ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,          // TODO: PV generation meter in MW
     PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag,       // TODO
 
     RegressionIntervalS   := T#60S
@@ -128,7 +141,7 @@ REAR_POA_AVG        := RTPP.RearPOA_Avg;
 BOM_AVG             := RTPP.BOMTemp_Avg;
 ```
 
-## 5. Commissioning Checks
+## 6. Commissioning Checks
 
 - [ ] Verify ActivePowerMW is PV generation meter in MW (not kW).
 - [ ] Verify AvailableInverters is in range 0..TotalInverters.
@@ -137,7 +150,7 @@ BOM_AVG             := RTPP.BOMTemp_Avg;
 - [ ] Verify RTPP_Reg_M and RTPP_Reg_C remain after controller restart.
 - [ ] Trend RTPP_MW, HSL_MW, Reg_M, Reg_C, Reg_N for at least one day.
 
-## 6. Troubleshooting Quick Notes
+## 7. Troubleshooting Quick Notes
 
 - RTPP stuck near zero:
   - Check sensor mapping, quality flags, and irradiance scaling.

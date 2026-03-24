@@ -10,6 +10,8 @@ The code estimates plant real-time power potential (RTPP) and an HSL output usin
 2. Online linear regression correction against measured plant active power.
 3. Output publishing for control and SCADA diagnostics.
 
+The correction layer is important because PV sites have many practical unknowns and changing conditions (soiling, sensor bias, clipping behavior, seasonal effects, and unmodeled losses). The regression continuously adapts the physics estimate to measured plant behavior.
+
 In short:
 
 - `FB_RTPP_CALC` computes a model-based RTPP.
@@ -35,6 +37,7 @@ Sections:
   - Periodically updates regression from per-inverter normalized values.
 - **STEP 5: Corrected RTPP**
   - Applies correction: `RTPP_TOTAL * RTPP_Reg_M + TotalAvailable * RTPP_Reg_C`.
+  - This correction compensates for site-specific unknowns that are difficult to model directly in a pure physics equation.
 - **STEP 6: HSL logic**
   - Uses `ActivePowerMW` (PV generation meter) and setpoint state.
 - **STEP 7: Output mapping**
@@ -70,9 +73,10 @@ Online linear regression learner.
 Behavior:
 
 - Keeps FIFO buffers of recent `(rtpp, active_p)` samples.
-- Recomputes linear fit when enough samples exist.
+- Recomputes a recency-weighted linear fit when enough samples exist (newer samples have higher influence).
 - Updates `M`, `C` by reference (`VAR_IN_OUT`) so retained globals persist across reboot.
 - Exposes sample count `N` for diagnostics.
+- Learns site-specific bias and gain drift over time so the output remains aligned with real plant response.
 
 ### `FB_SENSOR_AVG.xml`
 
