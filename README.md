@@ -4,13 +4,13 @@ Reusable RTAC RTPP library with site adapter pattern.
 
 ## Current Module Names
 
-- [RTPP_CALC/RTPP_GLOBALS.xml](RTPP_CALC/RTPP_GLOBALS.xml)
+- [RTPP_CALC/GVL_RTPP.xml](RTPP_CALC/GVL_RTPP.xml)
 - [RTPP_CALC/UDT_SENSOR.xml](RTPP_CALC/UDT_SENSOR.xml)
 - [RTPP_CALC/FB_SENSOR_AVG.xml](RTPP_CALC/FB_SENSOR_AVG.xml)
 - [RTPP_CALC/FB_RTPP_CALC.xml](RTPP_CALC/FB_RTPP_CALC.xml)
 - [RTPP_CALC/RTPP_REG.xml](RTPP_CALC/RTPP_REG.xml)
 - [RTPP_CALC/FB_RTPP.xml](RTPP_CALC/FB_RTPP.xml)
-- [RTPP_CALC/RTPP_PROGRAM.xml](RTPP_CALC/RTPP_PROGRAM.xml)
+- [RTPP_CALC/PG_RTPP.xml](RTPP_CALC/PG_RTPP.xml)
 
 ## Key Metering Note
 
@@ -30,7 +30,7 @@ Reusable RTAC RTPP library with site adapter pattern.
 
 ## Integration Rule
 
-Keep all site-specific tag mappings in [RTPP_CALC/RTPP_PROGRAM.xml](RTPP_CALC/RTPP_PROGRAM.xml). Keep core FB logic generic.
+Keep all site-specific tag mappings in [RTPP_CALC/PG_RTPP.xml](RTPP_CALC/PG_RTPP.xml). Keep core FB logic generic.
 
 ## Contributing
 

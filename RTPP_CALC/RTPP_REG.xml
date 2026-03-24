@@ -37,26 +37,26 @@ VAR
 	sum_xy : REAL := 0;
 	sum_x2 : REAL := 0;
 	denom  : REAL;
-	alpha  : REAL := 0.98;
 	w      : REAL := 1.0;
-	i      : INT;
-	j      : INT;
+	i          : INT;
+	writeIndex : INT := 0;
+	oldestIndex: INT := 1;
+	sampleIndex: INT := 1;
 END_VAR
 ]]></Interface>
       <Implementation><![CDATA[
-// --- FIFO buffer: shift left when full ---
-IF N < 1000 THEN
-	N := N + 1;
-ELSE
-	FOR i := 1 TO 999 DO
-		x[i] := x[i + 1];
-		y[i] := y[i + 1];
-	END_FOR
+// --- Ring buffer: overwrite oldest sample when full ---
+writeIndex := writeIndex + 1;
+IF writeIndex > 1000 THEN
+	writeIndex := 1;
 END_IF
 
-// Add newest sample at end of buffer
-x[N] := rtpp;
-y[N] := active_p;
+x[writeIndex] := rtpp;
+y[writeIndex] := active_p;
+
+IF N < 1000 THEN
+	N := N + 1;
+END_IF
 
 // --- Regression: require at least 50 samples ---
 IF N > 50 THEN
@@ -66,22 +66,35 @@ IF N > 50 THEN
 	sum_xy := 0;
 	sum_x2 := 0;
 
-	// Recency weighting: newest sample has highest weight.
-	// With alpha = 0.98, weight decays smoothly for older samples.
-	w := 1.0;
-	FOR j := 1 TO N - 1 DO
-		w := w * alpha;
-	END_FOR
+	// Determine the oldest sample so regression iterates in chronological order.
+	IF N < 1000 THEN
+		oldestIndex := 1;
+	ELSE
+		oldestIndex := writeIndex + 1;
+		IF oldestIndex > 1000 THEN
+			oldestIndex := 1;
+		END_IF
+	END_IF
 
+	// Recency weighting: newest sample (index N) has weight 1.0,
+	// oldest sample has weight RTPP_Alpha^(N-1). RTPP_Alpha is a global RETAIN
+	// variable — adjustable from SCADA or engineering tool at runtime.
+	w := EXPT(RTPP_Alpha, INT_TO_REAL(N - 1));
+
+	sampleIndex := oldestIndex;
 	FOR i := 1 TO N DO
 		sum_w  := sum_w  + w;
-		sum_x  := sum_x  + w * x[i];
-		sum_y  := sum_y  + w * y[i];
-		sum_xy := sum_xy + w * x[i] * y[i];
-		sum_x2 := sum_x2 + w * x[i] * x[i];
+		sum_x  := sum_x  + w * x[sampleIndex];
+		sum_y  := sum_y  + w * y[sampleIndex];
+		sum_xy := sum_xy + w * x[sampleIndex] * y[sampleIndex];
+		sum_x2 := sum_x2 + w * x[sampleIndex] * x[sampleIndex];
 
 		IF i < N THEN
-			w := w / alpha;
+			w := w / RTPP_Alpha;
+			sampleIndex := sampleIndex + 1;
+			IF sampleIndex > 1000 THEN
+				sampleIndex := 1;
+			END_IF
 		END_IF
 	END_FOR
 

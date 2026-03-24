@@ -72,9 +72,10 @@ Online linear regression learner.
 
 Behavior:
 
-- Keeps FIFO buffers of recent `(rtpp, active_p)` samples.
-- Recomputes a recency-weighted linear fit when enough samples exist (newer samples have higher influence).
+- Keeps recent `(rtpp, active_p)` samples in a **1000-entry ring buffer** (O(1) write, overwrites oldest when full).
+- Recomputes a **recency-weighted** least-squares fit on every call: newest sample has weight 1.0, oldest has weight `RTPP_Alpha^(N-1)`. Higher `RTPP_Alpha` = longer memory; lower = faster adaptation.
 - Updates `M`, `C` by reference (`VAR_IN_OUT`) so retained globals persist across reboot.
+- Requires at least 50 samples before fitting begins.
 - Exposes sample count `N` for diagnostics.
 - Learns site-specific bias and gain drift over time so the output remains aligned with real plant response.
 
@@ -91,7 +92,7 @@ Purpose:
 
 Shared sensor data type (`Quality`, `Value`, optional ignore flag).
 
-### `RTPP_GLOBALS.xml`
+### `GVL_RTPP.xml`
 
 Global variables used by program and SCADA layers.
 
@@ -99,11 +100,15 @@ Contains:
 
 - Output MVs (`RTPP_OUTPUT`, `HSL_OUTPUT`)
 - Diagnostic globals (`FRONT_POA_AVG`, `REAR_POA_AVG`, `BOM_AVG`)
-- **Retained regression coefficients**:
-  - `RTPP_Reg_M`
-  - `RTPP_Reg_C`
+- **Retained regression coefficients** (survive controller restart):
+  - `RTPP_Reg_M` — regression slope (init 1.0)
+  - `RTPP_Reg_C` — regression intercept (init 0.0)
+- **Retained regression conditioning thresholds** (adjustable from SCADA at runtime):
+  - `RTPP_MinIrradiance` — minimum front POA (W/m²) to allow a regression sample (default 100.0)
+  - `RTPP_ClippingThreshold` — skip regression when `ActivePowerMW ≥ POILimit × threshold` (default 0.98)
+  - `RTPP_Alpha` — exponential decay factor for recency weighting (default 0.99)
 
-### `RTPP_PROGRAM.xml`
+### `PG_RTPP.xml`
 
 Site adapter program.
 
@@ -116,16 +121,16 @@ This is the file you customize per site:
 
 ## Data Flow Summary
 
-1. Site tags -> sensor arrays (`RTPP_PROGRAM`).
+1. Site tags -> sensor arrays (`PG_RTPP`).
 2. Sensor arrays -> filtered averages (`FB_SENSOR_AVG`).
 3. Averages + plant params -> model RTPP (`FB_RTPP_CALC`).
 4. Model RTPP + metered active power -> regression update (`RTPP_REG`).
 5. Corrected RTPP + HSL logic -> final outputs (`FB_RTPP`).
-6. Final outputs -> global points for external use (`RTPP_PROGRAM` / `RTPP_GLOBALS`).
+6. Final outputs -> global points for external use (`PG_RTPP` / `GVL_RTPP`).
 
 ## Design Intent
 
 - Keep algorithm generic and reusable.
-- Keep site-specific naming isolated to one wrapper (`RTPP_PROGRAM`).
+- Keep site-specific naming isolated to one wrapper (`PG_RTPP`).
 - Preserve learned regression coefficients through restart using retained globals.
 - Provide diagnostics for commissioning and SCADA trending.

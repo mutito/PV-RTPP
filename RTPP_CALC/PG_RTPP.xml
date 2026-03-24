@@ -5,10 +5,10 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-    <Name>RTPP_PROGRAM</Name>
+    <Name>PG_RTPP</Name>
     <POUKind>Program</POUKind>
     <Content>
-      <Interface><![CDATA[PROGRAM RTPP_PROGRAM
+      <Interface><![CDATA[PROGRAM PG_RTPP
 // ============================================================
 // GENERIC SITE WRAPPER TEMPLATE
 // Keep this file as the site adapter layer:
@@ -137,12 +137,13 @@ RTPP(
 	PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
 	// Regression conditioning (site tags)
-	// ActivePowerMW must be the PV generation meter in MW.
+	// ActivePowerMW must be PV-only generation in MW.
+	// BESS site: if a BESS is present, do NOT use the POI meter here — use a
+	// dedicated PV generation meter, or subtract BESS active power from the POI
+	// meter. Passing POI power when the BESS is charging or discharging will
+	// corrupt the regression coefficients.
 	ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,
-	PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag,
-
-	// Regression timer
-	RegressionIntervalS   := T#60S
+	PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag
 );
 
 // ============================================================

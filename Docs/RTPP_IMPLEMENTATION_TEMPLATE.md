@@ -13,31 +13,35 @@ Complete these steps first:
 
 Import these modules into the RTAC project:
 
-- RTPP_GLOBALS.xml
+- GVL_RTPP.xml
 - UDT_SENSOR.xml
 - FB_SENSOR_AVG.xml
 - FB_RTPP_CALC.xml
 - RTPP_REG.xml
 - FB_RTPP.xml
-- RTPP_PROGRAM.xml
+- PG_RTPP.xml
 
 ## 3. One-Time Library Rules
 
 - Do not edit FB_RTPP.xml, FB_RTPP_CALC.xml, RTPP_REG.xml for site tag naming.
-- Keep all site-specific mappings in RTPP_PROGRAM.xml only.
-- Keep retained regression coefficients in RTPP_GLOBALS.xml:
+- Keep all site-specific mappings in PG_RTPP.xml only.
+- Retained regression coefficients in GVL_RTPP.xml survive controller restart:
   - RTPP_Reg_M := 1.0
   - RTPP_Reg_C := 0.0
+- Regression conditioning thresholds in GVL_RTPP.xml are adjustable from SCADA at runtime:
+  - RTPP_MinIrradiance (default 100.0 W/m²)
+  - RTPP_ClippingThreshold (default 0.98)
+  - RTPP_Alpha (default 0.99)
 
 ## 4. Site Configuration Checklist
 
 Important: The implementation body in RTPP_PROGRAM.xml is provided as an import-safe commented template.
 
-- [ ] Uncomment the implementation block in RTPP_PROGRAM.xml.
+- [ ] Uncomment the implementation block in PG_RTPP.xml.
 - [ ] Replace all example tags with your site-specific tags.
-- [ ] Keep all site-specific changes in RTPP_PROGRAM.xml only.
+- [ ] Keep all site-specific changes in PG_RTPP.xml only.
 
-Update the following constants in RTPP_PROGRAM.xml:
+Update the following constants in PG_RTPP.xml:
 
 - [ ] PLANT_TOTAL_INVERTERS
 - [ ] PLANT_DC_NOMINAL_MW
@@ -48,7 +52,7 @@ Update the following constants in RTPP_PROGRAM.xml:
 - [ ] REAR_SENSOR_COUNT
 - [ ] BOM_SENSOR_COUNT
 
-Update these tag mappings in RTPP_PROGRAM.xml:
+Update these tag mappings in PG_RTPP.xml:
 
 - [ ] Front POA Quality and Value tags
 - [ ] Rear POA Quality and Value tags
@@ -59,10 +63,10 @@ Update these tag mappings in RTPP_PROGRAM.xml:
 
 ## 5. Deployment Template (Site Wrapper)
 
-Copy and adapt this structure in RTPP_PROGRAM.xml.
+Copy and adapt this structure in PG_RTPP.xml.
 
 ```st
-PROGRAM RTPP_PROGRAM
+PROGRAM PG_RTPP
 VAR
   RTPP : FB_RTPP;
   FrontPOA : ARRAY[1..30] OF UDT_SENSOR;
@@ -121,10 +125,8 @@ RTPP(
     InvEfficiency         := 0.98,
     PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
-    ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,          // TODO: PV generation meter in MW
-    PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag,       // TODO
-
-    RegressionIntervalS   := T#60S
+    ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,          // TODO: PV-only generation meter in MW (not POI if BESS present)
+    PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag        // TODO
 );
 
 // SECTION 5: Publish outputs

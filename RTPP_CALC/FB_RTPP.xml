@@ -53,7 +53,9 @@ VAR_INPUT
 	PSetpointMW        : REAL; // Current active power setpoint (MW) from PPC/RTU
 
 	// --- Regression timer ---
-	RegressionIntervalS: TIME; // How often to update regression (e.g. T#60S)
+	// Interval is now computed adaptively inside the block:
+	//   N < 50  -> T#15S  (fast bootstrap)
+	//   N >= 50 -> T#60S  (steady-state)
 END_VAR
 
 VAR
@@ -64,6 +66,7 @@ VAR
 	PlantCalc    : FB_RTPP_CALC;
 	Reg          : RTPP_REG;
 	RegTimer     : TON;
+	RegInterval  : TIME; // Adaptive sample interval: T#15S when N<50, T#60S otherwise
 
 	// Computed availability
 	TotalAvailable : REAL;
@@ -155,14 +158,25 @@ PlantCalc(
 // ============================================================
 // STEP 4: Online regression update (timed, conditioned)
 // ============================================================
-RegTimer(IN := TRUE, PT := RegressionIntervalS);
+// Adaptive interval: sample fast while bootstrapping (N < 50),
+// then drop to steady-state rate once enough samples are accumulated.
+IF N_Samples < 50 THEN
+	RegInterval := T#15S;
+ELSE
+	RegInterval := T#60S;
+END_IF
+
+RegTimer(IN := TRUE, PT := RegInterval);
 
 IF RegTimer.Q THEN
 	RegTimer(IN := FALSE);
 
-	// Conditions: uncurtailed + daytime + inverters running
+	// Conditions: uncurtailed + not clipping + daytime + inverters running
+	// Thresholds RTPP_ClippingThreshold and RTPP_MinIrradiance are global
+	// RETAIN variables — adjustable from SCADA or engineering tool at runtime.
 	IF PSetpointMW >= PlantPOILimitMW
-	   AND FrontPOAAverage > 50.0
+	   AND ActivePowerMW < PlantPOILimitMW * RTPP_ClippingThreshold
+	   AND FrontPOAAverage > RTPP_MinIrradiance
 	   AND RTPP_TOTAL   > 0.0
 	   AND TotalAvailable > 0.0 THEN
 

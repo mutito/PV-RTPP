@@ -5,7 +5,7 @@
       <Schema>36</Schema>
       <DeviceMOT>3555</DeviceMOT>
     </ExportSource>
-    <Name>RTPP_GLOBALS</Name>
+    <Name>GVL_RTPP</Name>
     <Content><![CDATA[VAR_GLOBAL
 	// These globals are written by the site wrapper PROGRAM and can be
 	// trended or mapped to DNP/SCADA from here.
@@ -24,6 +24,12 @@ VAR_GLOBAL RETAIN
 	// Initialised to identity (no correction) so RTPP is valid from first scan.
 	RTPP_Reg_M : REAL := 1.0; // Regression slope
 	RTPP_Reg_C : REAL := 0.0; // Regression intercept
+
+	// Regression conditioning thresholds — adjust from SCADA or engineering tool.
+	RTPP_MinIrradiance       : REAL := 100.0; // Minimum front POA (W/m2) to allow regression update
+	RTPP_ClippingThreshold   : REAL := 0.98;  // Skip regression when ActivePowerMW >= POILimit * this fraction
+	RTPP_Alpha               : REAL := 0.99;  // Exponential decay factor for recency weighting (0 < alpha < 1)
+	                                           // Higher = longer memory; lower = faster forgetting
 END_VAR
 ]]></Content>
   </GVL>
