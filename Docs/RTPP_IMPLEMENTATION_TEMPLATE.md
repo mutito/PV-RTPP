@@ -52,6 +52,15 @@ Update the following constants in PG_RTPP.xml:
 - [ ] REAR_SENSOR_COUNT
 - [ ] BOM_SENSOR_COUNT
 
+**Electrical parameters (tune to match site equipment and conditions):**
+
+- [ ] ELEC_BIFACIALITY — module bifaciality coefficient (e.g. 0.70)
+- [ ] ELEC_TEMP_COEF — power temp coefficient (%/degC, typically negative, e.g. -0.0034)
+- [ ] ELEC_DEGRADATION — annual degradation fraction (e.g. 0.005)
+- [ ] ELEC_DC_LOSSES — DC losses fraction (e.g. 0.005)
+- [ ] ELEC_AC_LOSSES — AC losses fraction (e.g. 0.015)
+- [ ] ELEC_INV_EFFICIENCY — inverter efficiency fraction (e.g. 0.98)
+
 Update these tag mappings in PG_RTPP.xml:
 
 - [ ] Front POA Quality and Value tags
