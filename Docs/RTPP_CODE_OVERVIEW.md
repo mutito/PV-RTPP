@@ -17,7 +17,7 @@ In short:
 - `FB_RTPP_CALC` computes a model-based RTPP.
 - `RTPP_REG` learns correction coefficients (`M`, `C`) online.
 - `FB_RTPP` orchestrates everything and produces final outputs.
-- `RTPP_PROGRAM` maps site tags to generic library inputs.
+- `PG_RTPP` maps site tags to generic library inputs.
 
 ## Main Files and Roles
 
@@ -86,11 +86,17 @@ Reusable averaging helper.
 Purpose:
 
 - Filters sensors by quality and configured min/max bounds.
+- Supports per-sensor operator ignore from `UDT_SENSOR.Ignore`.
+  - This flag is intended to be mapped from SCADA/HMI so operators can
+    temporarily exclude bad or maintenance-affected sensors without code changes.
 - Returns average and count of valid sensors.
 
 ### `UDT_SENSOR.xml`
 
-Shared sensor data type (`Quality`, `Value`, optional ignore flag).
+Shared sensor data type (`Quality`, `Value`, `Ignore`).
+
+- `Ignore` is a runtime override point that can be driven from SCADA/HMI.
+- When `Ignore = TRUE`, that sensor is excluded from averaging logic.
 
 ### `GVL_RTPP.xml`
 
@@ -115,9 +121,10 @@ Site adapter program.
 This is the file you customize per site:
 
 1. Map site tags into generic sensor arrays.
-2. Set plant constants (inverter count, capacities, POI, dates).
-3. Call `FB_RTPP` with mapped tags and constants.
-4. Publish outputs to global MVs.
+2. Map per-sensor ignore points from SCADA/HMI into each sensor `Ignore` field.
+3. Set plant constants (inverter count, capacities, POI, dates).
+4. Call `FB_RTPP` with mapped tags and constants.
+5. Publish outputs to global MVs.
 
 ## Data Flow Summary
 
