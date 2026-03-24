@@ -87,24 +87,33 @@ VAR CONSTANT
 END_VAR
 
 // SECTION 1: Front POA mapping
-// TODO: replace with site tags
-FrontPOA[1].Quality := Tags.SITE_DMET1_IRRAD_FPOA.status.q.validity;
-FrontPOA[1].Value   := Tags.SITE_DMET1_IRRAD_FPOA.status.instMag;
+// Replace fPOA[1..4] with your site's front irradiance tags
+FrontPOA[1].Quality := fPOA[1].q.validity;
+FrontPOA[1].Value   := fPOA[1].instMag;
+FrontPOA[2].Quality := fPOA[2].q.validity;
+FrontPOA[2].Value   := fPOA[2].instMag;
+// ... add fPOA[3..4] similarly
 
 // SECTION 2: Rear POA mapping
-// TODO: replace with site tags
-RearPOA[1].Quality  := Tags.SITE_DMET1_IRRAD_RPOA.status.q.validity;
-RearPOA[1].Value    := Tags.SITE_DMET1_IRRAD_RPOA.status.instMag;
+// Replace rPOA[1..4] with your site's rear irradiance tags
+RearPOA[1].Quality  := rPOA[1].q.validity;
+RearPOA[1].Value    := rPOA[1].instMag;
+RearPOA[2].Quality  := rPOA[2].q.validity;
+RearPOA[2].Value    := rPOA[2].instMag;
+// ... add rPOA[3..4] similarly
 
 // SECTION 3: BOM mapping
-// TODO: replace with site tags
-BOMTemp[1].Quality  := SITE_DMET1_BOM_TEMP_1.status.q.validity;
-BOMTemp[1].Value    := SITE_DMET1_BOM_TEMP_1.status.instMag;
+// Replace BOM[1..12] with your site's temperature tags
+BOMTemp[1].Quality  := BOM[1].q.validity;
+BOMTemp[1].Value    := BOM[1].instMag;
+BOMTemp[2].Quality  := BOM[2].q.validity;
+BOMTemp[2].Value    := BOM[2].instMag;
+// ... add BOM[3..12] similarly
 
 // SECTION 4: Call RTPP block
 RTPP(
     TotalInverters        := PLANT_TOTAL_INVERTERS,
-    AvailableInverters    := Tags.SITE_PPC_INV_RUNNING_COUNT.instMag, // TODO
+    AvailableInverters    := inv_running.instMag,
 
     FrontPOASensors       := FrontPOA,
     NumberOfFPOASensors   := FRONT_SENSOR_COUNT,
@@ -125,8 +134,8 @@ RTPP(
     InvEfficiency         := 0.98,
     PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
-    ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,          // TODO: PV-only generation meter in MW (not POI if BESS present)
-    PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag        // TODO
+    ActivePowerMW         := pv_gen.instMag * 0.001,          // TODO: PV-only generation meter in MW (not POI if BESS present)
+    PSetpointMW           := setpoint.instMag        // TODO
 );
 
 // SECTION 5: Publish outputs
