@@ -41,12 +41,12 @@ VAR CONSTANT
 	BOM_SENSOR_COUNT      : INT := 12;
 
 	// Electrical parameters: tune these per site
-	ELEC_BIFACIALITY      : REAL := 0.70;   // Module bifaciality coefficient
-	ELEC_TEMP_COEF        : REAL := -0.0034; // Power temp coefficient (%/degC, negative)
-	ELEC_DEGRADATION      : REAL := 0.005;  // Annual degradation fraction
-	ELEC_DC_LOSSES        : REAL := 0.005;  // DC losses fraction
-	ELEC_AC_LOSSES        : REAL := 0.015;  // AC losses fraction
-	ELEC_INV_EFFICIENCY   : REAL := 0.98;   // Inverter efficiency fraction
+	BIFACIALITY           : REAL := 0.70;   // Module bifaciality coefficient
+	TEMP_COEF             : REAL := -0.0034; // Power temp coefficient (%/degC, negative)
+	DEGRADATION           : REAL := 0.005;  // Annual degradation fraction
+	DC_LOSSES             : REAL := 0.005;  // DC losses fraction
+	AC_LOSSES             : REAL := 0.015;  // AC losses fraction
+	INV_EFFICIENCY        : REAL := 0.98;   // Inverter efficiency fraction
 END_VAR
 ]]></Interface>
       <Implementation><![CDATA[
@@ -136,12 +136,12 @@ RTPP(
 	commMonth             := PLANT_COMM_MONTH,
 
 	// Electrical parameters
-	BifacialityFactor     := ELEC_BIFACIALITY,
-	TempCoef              := ELEC_TEMP_COEF,
-	DegradationRate       := ELEC_DEGRADATION,
-	DCLossesPercent       := ELEC_DC_LOSSES,
-	ACLossesPercent       := ELEC_AC_LOSSES,
-	InvEfficiency         := ELEC_INV_EFFICIENCY,
+	BifacialityFactor     := BIFACIALITY,
+	TempCoef              := TEMP_COEF,
+	DegradationRate       := DEGRADATION,
+	DCLossesPercent       := DC_LOSSES,
+	ACLossesPercent       := AC_LOSSES,
+	InvEfficiency         := INV_EFFICIENCY,
 	PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
 	// Regression conditioning (site tags)

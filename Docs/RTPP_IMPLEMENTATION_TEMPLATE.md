@@ -54,12 +54,12 @@ Update the following constants in PG_RTPP.xml:
 
 **Electrical parameters (tune to match site equipment and conditions):**
 
-- [ ] ELEC_BIFACIALITY — module bifaciality coefficient (e.g. 0.70)
-- [ ] ELEC_TEMP_COEF — power temp coefficient (%/degC, typically negative, e.g. -0.0034)
-- [ ] ELEC_DEGRADATION — annual degradation fraction (e.g. 0.005)
-- [ ] ELEC_DC_LOSSES — DC losses fraction (e.g. 0.005)
-- [ ] ELEC_AC_LOSSES — AC losses fraction (e.g. 0.015)
-- [ ] ELEC_INV_EFFICIENCY — inverter efficiency fraction (e.g. 0.98)
+- [ ] BIFACIALITY — module bifaciality coefficient (e.g. 0.70)
+- [ ] TEMP_COEF — power temp coefficient (%/degC, typically negative, e.g. -0.0034)
+- [ ] DEGRADATION — annual degradation fraction (e.g. 0.005)
+- [ ] DC_LOSSES — DC losses fraction (e.g. 0.005)
+- [ ] AC_LOSSES — AC losses fraction (e.g. 0.015)
+- [ ] INV_EFFICIENCY — inverter efficiency fraction (e.g. 0.98)
 
 Update these tag mappings in PG_RTPP.xml:
 
@@ -93,6 +93,13 @@ VAR CONSTANT
     FRONT_SENSOR_COUNT    : INT := 0;      // TODO
     REAR_SENSOR_COUNT     : INT := 0;      // TODO
     BOM_SENSOR_COUNT      : INT := 0;      // TODO
+
+    ELEC_BIFACIALITY      : REAL := 0.70;   // TODO: tune to module spec
+    ELEC_TEMP_COEF        : REAL := -0.0034; // TODO: tune to module spec
+    ELEC_DEGRADATION      : REAL := 0.005;  // TODO: tune to site conditions
+    ELEC_DC_LOSSES        : REAL := 0.005;  // TODO: tune to site conditions
+    ELEC_AC_LOSSES        : REAL := 0.015;  // TODO: tune to site conditions
+    ELEC_INV_EFFICIENCY   : REAL := 0.98;   // TODO: tune to inverter spec
 END_VAR
 
 // SECTION 1: Front POA mapping
@@ -135,12 +142,12 @@ RTPP(
     commYear              := PLANT_COMM_YEAR,
     commMonth             := PLANT_COMM_MONTH,
 
-    BifacialityFactor     := 0.70,
-    TempCoef              := -0.0034,
-    DegradationRate       := 0.005,
-    DCLossesPercent       := 0.005,
-    ACLossesPercent       := 0.015,
-    InvEfficiency         := 0.98,
+    BifacialityFactor     := ELEC_BIFACIALITY,
+    TempCoef              := ELEC_TEMP_COEF,
+    DegradationRate       := ELEC_DEGRADATION,
+    DCLossesPercent       := ELEC_DC_LOSSES,
+    ACLossesPercent       := ELEC_AC_LOSSES,
+    InvEfficiency         := ELEC_INV_EFFICIENCY,
     PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
     ActivePowerMW         := pv_gen.instMag * 0.001,          // TODO: PV-only generation meter in MW (not POI if BESS present)
