@@ -213,10 +213,12 @@ IF RegTimer.Q THEN
 	RegTimer(IN := FALSE);
 
 	// Conditions: uncurtailed + not clipping + daytime + inverters running
-	// Thresholds RTPP_ClippingThreshold and RTPP_MinIrradiance are global
+	// Thresholds RTPP_ClippingThreshold, RTPP_MinIrradiance, and
+	// RTPP_MinGenerationMW are global
 	// RETAIN variables — adjustable from SCADA or engineering tool at runtime.
 	IF PSetpointMW >= PlantPOILimitMW
-	   AND ActivePowerMW < PlantPOILimitMW * RTPP_ClippingThreshold
+	   AND ActivePowerMW < PSetpointMW * RTPP_ClippingThreshold
+	   AND ActivePowerMW >= RTPP_MinGenerationMW
 	   AND FrontPOAAverage > RTPP_MinIrradiance
 	   AND RTPP_TOTAL   > 0.0
 	   AND TotalAvailable > 0.0 THEN

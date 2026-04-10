@@ -39,6 +39,14 @@ VAR CONSTANT
 	FRONT_SENSOR_COUNT    : INT := 4;
 	REAR_SENSOR_COUNT     : INT := 4;
 	BOM_SENSOR_COUNT      : INT := 12;
+
+	// Electrical parameters: tune these per site
+	BIFACIALITY           : REAL := 0.70;   // Module bifaciality coefficient
+	TEMP_COEF             : REAL := -0.0034; // Power temp coefficient (%/degC, negative)
+	DEGRADATION           : REAL := 0.005;  // Annual degradation fraction
+	DC_LOSSES             : REAL := 0.005;  // DC losses fraction
+	AC_LOSSES             : REAL := 0.015;  // AC losses fraction
+	INV_EFFICIENCY        : REAL := 0.98;   // Inverter efficiency fraction
 END_VAR
 ]]></Interface>
       <Implementation><![CDATA[
@@ -56,54 +64,54 @@ END_VAR
 // ============================================================
 // SECTION 1: Map site tags to front POA sensors
 // ============================================================
-FrontPOA[1].Quality := Tags.SITE_DMET1_IRRAD_FPOA.status.q.validity;
-FrontPOA[1].Value   := Tags.SITE_DMET1_IRRAD_FPOA.status.instMag;
-FrontPOA[2].Quality := Tags.SITE_DMET2_IRRAD_FPOA.status.q.validity;
-FrontPOA[2].Value   := Tags.SITE_DMET2_IRRAD_FPOA.status.instMag;
-FrontPOA[3].Quality := Tags.SITE_DMET3_IRRAD_FPOA.status.q.validity;
-FrontPOA[3].Value   := Tags.SITE_DMET3_IRRAD_FPOA.status.instMag;
-FrontPOA[4].Quality := Tags.SITE_DMET4_IRRAD_FPOA.status.q.validity;
-FrontPOA[4].Value   := Tags.SITE_DMET4_IRRAD_FPOA.status.instMag;
+FrontPOA[1].Quality := fPOA[1].q.validity;
+FrontPOA[1].Value   := fPOA[1].instMag;
+FrontPOA[2].Quality := fPOA[2].q.validity;
+FrontPOA[2].Value   := fPOA[2].instMag;
+FrontPOA[3].Quality := fPOA[3].q.validity;
+FrontPOA[3].Value   := fPOA[3].instMag;
+FrontPOA[4].Quality := fPOA[4].q.validity;
+FrontPOA[4].Value   := fPOA[4].instMag;
 
 // ============================================================
 // SECTION 2: Map site tags to rear POA sensors
 // ============================================================
-RearPOA[1].Quality  := Tags.SITE_DMET1_IRRAD_RPOA.status.q.validity;
-RearPOA[1].Value    := Tags.SITE_DMET1_IRRAD_RPOA.status.instMag;
-RearPOA[2].Quality  := Tags.SITE_DMET2_IRRAD_RPOA.status.q.validity;
-RearPOA[2].Value    := Tags.SITE_DMET2_IRRAD_RPOA.status.instMag;
-RearPOA[3].Quality  := Tags.SITE_DMET3_IRRAD_RPOA.status.q.validity;
-RearPOA[3].Value    := Tags.SITE_DMET3_IRRAD_RPOA.status.instMag;
-RearPOA[4].Quality  := Tags.SITE_DMET4_IRRAD_RPOA.status.q.validity;
-RearPOA[4].Value    := Tags.SITE_DMET4_IRRAD_RPOA.status.instMag;
+RearPOA[1].Quality  := rPOA[1].q.validity;
+RearPOA[1].Value    := rPOA[1].instMag;
+RearPOA[2].Quality  := rPOA[2].q.validity;
+RearPOA[2].Value    := rPOA[2].instMag;
+RearPOA[3].Quality  := rPOA[3].q.validity;
+RearPOA[3].Value    := rPOA[3].instMag;
+RearPOA[4].Quality  := rPOA[4].q.validity;
+RearPOA[4].Value    := rPOA[4].instMag;
 
 // ============================================================
 // SECTION 3: Map site tags to BOM temperature sensors
 // ============================================================
-BOMTemp[1].Quality  := SITE_DMET1_BOM_TEMP_1.status.q.validity;
-BOMTemp[1].Value    := SITE_DMET1_BOM_TEMP_1.status.instMag;
-BOMTemp[2].Quality  := SITE_DMET1_BOM_TEMP_2.status.q.validity;
-BOMTemp[2].Value    := SITE_DMET1_BOM_TEMP_2.status.instMag;
-BOMTemp[3].Quality  := SITE_DMET1_BOM_TEMP_3.status.q.validity;
-BOMTemp[3].Value    := SITE_DMET1_BOM_TEMP_3.status.instMag;
-BOMTemp[4].Quality  := SITE_DMET2_BOM_TEMP_1.status.q.validity;
-BOMTemp[4].Value    := SITE_DMET2_BOM_TEMP_1.status.instMag;
-BOMTemp[5].Quality  := SITE_DMET2_BOM_TEMP_2.status.q.validity;
-BOMTemp[5].Value    := SITE_DMET2_BOM_TEMP_2.status.instMag;
-BOMTemp[6].Quality  := SITE_DMET2_BOM_TEMP_3.status.q.validity;
-BOMTemp[6].Value    := SITE_DMET2_BOM_TEMP_3.status.instMag;
-BOMTemp[7].Quality  := SITE_DMET3_BOM_TEMP_1.status.q.validity;
-BOMTemp[7].Value    := SITE_DMET3_BOM_TEMP_1.status.instMag;
-BOMTemp[8].Quality  := SITE_DMET3_BOM_TEMP_2.status.q.validity;
-BOMTemp[8].Value    := SITE_DMET3_BOM_TEMP_2.status.instMag;
-BOMTemp[9].Quality  := SITE_DMET3_BOM_TEMP_3.status.q.validity;
-BOMTemp[9].Value    := SITE_DMET3_BOM_TEMP_3.status.instMag;
-BOMTemp[10].Quality := SITE_DMET4_BOM_TEMP_1.status.q.validity;
-BOMTemp[10].Value   := SITE_DMET4_BOM_TEMP_1.status.instMag;
-BOMTemp[11].Quality := SITE_DMET4_BOM_TEMP_2.status.q.validity;
-BOMTemp[11].Value   := SITE_DMET4_BOM_TEMP_2.status.instMag;
-BOMTemp[12].Quality := SITE_DMET4_BOM_TEMP_3.status.q.validity;
-BOMTemp[12].Value   := SITE_DMET4_BOM_TEMP_3.status.instMag;
+BOMTemp[1].Quality  := BOM[1].q.validity;
+BOMTemp[1].Value    := BOM[1].instMag;
+BOMTemp[2].Quality  := BOM[2].q.validity;
+BOMTemp[2].Value    := BOM[2].instMag;
+BOMTemp[3].Quality  := BOM[3].q.validity;
+BOMTemp[3].Value    := BOM[3].instMag;
+BOMTemp[4].Quality  := BOM[4].q.validity;
+BOMTemp[4].Value    := BOM[4].instMag;
+BOMTemp[5].Quality  := BOM[5].q.validity;
+BOMTemp[5].Value    := BOM[5].instMag;
+BOMTemp[6].Quality  := BOM[6].q.validity;
+BOMTemp[6].Value    := BOM[6].instMag;
+BOMTemp[7].Quality  := BOM[7].q.validity;
+BOMTemp[7].Value    := BOM[7].instMag;
+BOMTemp[8].Quality  := BOM[8].q.validity;
+BOMTemp[8].Value    := BOM[8].instMag;
+BOMTemp[9].Quality  := BOM[9].q.validity;
+BOMTemp[9].Value    := BOM[9].instMag;
+BOMTemp[10].Quality := BOM[10].q.validity;
+BOMTemp[10].Value   := BOM[10].instMag;
+BOMTemp[11].Quality := BOM[11].q.validity;
+BOMTemp[11].Value   := BOM[11].instMag;
+BOMTemp[12].Quality := BOM[12].q.validity;
+BOMTemp[12].Value   := BOM[12].instMag;
 
 // ============================================================
 // SECTION 4: Call generic RTPP function block
@@ -112,7 +120,7 @@ BOMTemp[12].Value   := SITE_DMET4_BOM_TEMP_3.status.instMag;
 RTPP(
 	// Inverter availability
 	TotalInverters        := PLANT_TOTAL_INVERTERS,
-	AvailableInverters    := Tags.SITE_PPC_INV_RUNNING_COUNT.instMag,
+	AvailableInverters    := inv_running.instMag,
 
 	// Sensors
 	FrontPOASensors       := FrontPOA,
@@ -128,12 +136,12 @@ RTPP(
 	commMonth             := PLANT_COMM_MONTH,
 
 	// Electrical parameters
-	BifacialityFactor     := 0.70,
-	TempCoef              := -0.0034,
-	DegradationRate       := 0.005,
-	DCLossesPercent       := 0.005,
-	ACLossesPercent       := 0.015,
-	InvEfficiency         := 0.98,
+	BifacialityFactor     := BIFACIALITY,
+	TempCoef              := TEMP_COEF,
+	DegradationRate       := DEGRADATION,
+	DCLossesPercent       := DC_LOSSES,
+	ACLossesPercent       := AC_LOSSES,
+	InvEfficiency         := INV_EFFICIENCY,
 	PlantPOILimitMW       := PLANT_POI_LIMIT_MW,
 
 	// Regression conditioning (site tags)
@@ -142,8 +150,8 @@ RTPP(
 	// dedicated PV generation meter, or subtract BESS active power from the POI
 	// meter. Passing POI power when the BESS is charging or discharging will
 	// corrupt the regression coefficients.
-	ActivePowerMW         := SITE_PV_METER_KW_3PH.instMag * 0.001,
-	PSetpointMW           := Tags.SITE_PPC_P_SP_RTU.oper.setMag
+	ActivePowerMW         := pv_gen.instMag * 0.001,
+	PSetpointMW           := setpoint.instMag
 );
 
 // ============================================================

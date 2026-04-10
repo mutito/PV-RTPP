@@ -50,7 +50,7 @@ END_VAR
 ]]></Interface>
       <Implementation><![CDATA[
 (* Clamp configuration inputs to physically meaningful bounds *)
-safeBifaciality   := MAX(MIN(bifacialityFactor, 1.5), 0.0);
+safeBifaciality   := MAX(MIN(bifacialityFactor, 0.9), 0.0);
 safeInvEfficiency := MAX(MIN(invEfficiency, 1.0), 0.0);
 safeDCLosses      := MAX(MIN(dcLossesPercent, 1.0), 0.0);
 safeACLosses      := MAX(MIN(acLossesPercent, 1.0), 0.0);

@@ -27,7 +27,8 @@ VAR_GLOBAL RETAIN
 
 	// Regression conditioning thresholds — adjust from SCADA or engineering tool.
 	RTPP_MinIrradiance       : REAL := 100.0; // Minimum front POA (W/m2) to allow regression update
-	RTPP_ClippingThreshold   : REAL := 0.98;  // Skip regression when ActivePowerMW >= POILimit * this fraction
+	RTPP_MinGenerationMW     : REAL := 5.0;   // Minimum active generation (MW) to allow regression update
+	RTPP_ClippingThreshold   : REAL := 0.98;  // Skip regression when ActivePowerMW >= PSetpointMW * this fraction
 	RTPP_Alpha               : REAL := 0.99;  // Exponential decay factor for recency weighting (0 < alpha < 1)
 	                                           // Higher = longer memory; lower = faster forgetting
 END_VAR
