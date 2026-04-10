@@ -52,10 +52,13 @@ VAR_INPUT
 	ActivePowerMW      : REAL; // PV generation meter active power (MW)
 	PSetpointMW        : REAL; // Current active power setpoint (MW) from PPC/RTU
 
-	// --- Regression timer ---
+	// --- Regression timer intervals (runtime configurable) ---
 	// Interval is now computed adaptively inside the block:
-	//   N < 50  -> T#15S  (fast bootstrap)
-	//   N >= 50 -> T#60S  (steady-state)
+	//   N < BootstrapSampleThreshold -> BootstrapInterval (fast bootstrap)
+	//   N >= BootstrapSampleThreshold -> SteadyStateInterval (steady-state)
+	BootstrapInterval           : TIME := T#15S;  // Sampling interval while N < threshold
+	SteadyStateInterval         : TIME := T#60S;  // Sampling interval after bootstrap
+	BootstrapSampleThreshold    : INT := 50;      // Sample count to switch from bootstrap to steady-state
 END_VAR
 
 VAR
@@ -67,6 +70,11 @@ VAR
 	Reg          : RTPP_REG;
 	RegTimer     : TON;
 	RegInterval  : TIME; // Adaptive sample interval: T#15S when N<50, T#60S otherwise
+	
+	// Moving average filters for regression noise reduction (1-second sampling)
+	RTppMovingAvg    : FB_MOVING_AVG;
+	ActivePMovingAvg : FB_MOVING_AVG;
+	SampleTimer      : TON; // 1-second sample timer for regression input averaging
 
 	// Computed availability
 	TotalAvailable : REAL;
@@ -79,6 +87,10 @@ VAR
 	// RTPP results
 	RTPP_TOTAL    : REAL;
 	RTPP_estimate : REAL;
+
+	// Smoothed regression inputs (for noise reduction)
+	RTpp_Smoothed    : REAL;
+	ActiveP_Smoothed : REAL;
 
 	N_Samples : INT;
 END_VAR
@@ -156,14 +168,43 @@ PlantCalc(
 	acPowerOutputMW    => RTPP_TOTAL);
 
 // ============================================================
-// STEP 4: Online regression update (timed, conditioned)
+// STEP 4: Moving average noise reduction for regression inputs
 // ============================================================
-// Adaptive interval: sample fast while bootstrapping (N < 50),
-// then drop to steady-state rate once enough samples are accumulated.
-IF N_Samples < 50 THEN
-	RegInterval := T#15S;
+// Sample every 1 second to feed into moving averages
+SampleTimer(IN := TRUE, PT := T#1S);
+
+IF SampleTimer.Q THEN
+	SampleTimer(IN := FALSE);
+	
+	// Feed current RTPP and ActivePower into moving averages (120-sample window)
+	RTppMovingAvg(
+		Value      := RTPP_TOTAL,
+		WindowSize := 120,
+		Enable     := TRUE,
+		Average    => RTpp_Smoothed,
+		Count      => );
+	
+	ActivePMovingAvg(
+		Value      := ActivePowerMW,
+		WindowSize := 120,
+		Enable     := TRUE,
+		Average    => ActiveP_Smoothed,
+		Count      => );
+END_IF
+
+IF NOT SampleTimer.IN THEN
+	SampleTimer(IN := TRUE);
+END_IF
+
+// ============================================================
+// STEP 5: Online regression update (timed, conditioned with smoothed inputs)
+// ============================================================
+// Adaptive interval: sample fast while bootstrapping (N < BootstrapSampleThreshold),
+// then drop to steady-state rate once threshold is reached.
+IF N_Samples < BootstrapSampleThreshold THEN
+	RegInterval := BootstrapInterval;
 ELSE
-	RegInterval := T#60S;
+	RegInterval := SteadyStateInterval;
 END_IF
 
 RegTimer(IN := TRUE, PT := RegInterval);
@@ -180,9 +221,10 @@ IF RegTimer.Q THEN
 	   AND RTPP_TOTAL   > 0.0
 	   AND TotalAvailable > 0.0 THEN
 
+		// Use smoothed values from moving average to reduce noise
 		Reg(
-			rtpp     := RTPP_TOTAL / TotalAvailable,
-			active_p := ActivePowerMW / TotalAvailable,
+			rtpp     := RTpp_Smoothed / TotalAvailable,
+			active_p := ActiveP_Smoothed / TotalAvailable,
 			M        := RTPP_Reg_M,
 			C        := RTPP_Reg_C,
 			N        => N_Samples);
@@ -194,12 +236,12 @@ IF NOT RegTimer.IN THEN
 END_IF
 
 // ============================================================
-// STEP 5: Apply regression correction and clamp
+// STEP 6: Apply regression correction and clamp
 // ============================================================
 RTPP_estimate := MAX(MIN(RTPP_TOTAL * RTPP_Reg_M + TotalAvailable * RTPP_Reg_C, PlantPOILimitMW), 0.0);
 
 // ============================================================
-// STEP 6: HSL calculation
+// STEP 7: HSL calculation
 // ============================================================
 IF PSetpointMW >= PlantPOILimitMW THEN
 	// Not curtailed
@@ -210,7 +252,7 @@ ELSE
 END_IF
 
 // ============================================================
-// STEP 7: Map outputs
+// STEP 8: Map outputs
 // ============================================================
 RTPP_MW      := RTPP_estimate;
 Reg_M        := RTPP_Reg_M;

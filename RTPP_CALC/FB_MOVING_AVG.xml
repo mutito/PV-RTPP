@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RTACModule>
+  <POU>
+    <ExportSource>
+      <Schema>36</Schema>
+      <DeviceMOT>3555</DeviceMOT>
+    </ExportSource>
+    <Name>FB_MOVING_AVG</Name>
+    <POUKind>FunctionBlock</POUKind>
+    <Content>
+      <Interface><![CDATA[FUNCTION_BLOCK FB_MOVING_AVG
+// Simple Moving Average (SMA) filter for sensor smoothing
+// Maintains a circular buffer of the last N samples and returns the average.
+// Use for smoothing irradiance, temperature, or other noisy sensor readings.
+
+VAR_INPUT
+	Value       : REAL; // New input value to add to the moving average
+	WindowSize  : INT := 120; // Number of samples to average (default: 120)
+	Enable      : BOOL := TRUE; // Enable/disable data accumulation
+END_VAR
+
+VAR_OUTPUT
+	Average : REAL; // Current moving average
+	Count   : INT;  // Current number of samples in buffer (0 to WindowSize)
+END_VAR
+
+VAR
+	Buffer      : ARRAY[1..1000] OF REAL;
+	WriteIndex  : INT := 1;
+	BufferCount : INT := 0;
+	Sum         : REAL := 0;
+	i           : INT;
+	OldValue    : REAL;
+END_VAR
+]]></Interface>
+      <Implementation><![CDATA[
+// Add new sample to circular buffer only if enabled
+IF Enable THEN
+	// If buffer is at max capacity, remove oldest value from sum
+	IF BufferCount >= WindowSize THEN
+		OldValue := Buffer[WriteIndex];
+		Sum := Sum - OldValue;
+		BufferCount := WindowSize;
+	END_IF
+	
+	// Add new value to buffer
+	Buffer[WriteIndex] := Value;
+	Sum := Sum + Value;
+	
+	// Increment sample count (until reaching window size)
+	IF BufferCount < WindowSize THEN
+		BufferCount := BufferCount + 1;
+	END_IF
+	
+	// Move write pointer to next position
+	WriteIndex := WriteIndex + 1;
+	IF WriteIndex > 1000 THEN
+		WriteIndex := 1;
+	END_IF
+END_IF
+
+// Calculate average
+IF BufferCount > 0 THEN
+	Average := Sum / INT_TO_REAL(BufferCount);
+ELSE
+	Average := 0;
+END_IF
+
+// Output current count for diagnostics
+Count := BufferCount;
+]]></Implementation>
+    </Content>
+  </POU>
+</RTACModule>
